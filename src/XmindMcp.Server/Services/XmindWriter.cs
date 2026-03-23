@@ -156,14 +156,17 @@ public class XmindWriter
     {
         var entry = archive.CreateEntry("manifest.json", CompressionLevel.Optimal);
         using var stream = entry.Open();
+        
+        // XMind 标准 manifest 格式
         var manifest = new Dictionary<string, object>
         {
             ["file-entries"] = new Dictionary<string, object>
             {
                 ["content.json"] = new { },
-                ["metadata"] = new { }
+                ["metadata.json"] = new { }
             }
         };
+        
         var json = JsonSerializer.Serialize(manifest, JsonOptions);
         var bytes = Encoding.UTF8.GetBytes(json);
         stream.Write(bytes, 0, bytes.Length);
