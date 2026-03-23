@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/XmindMcp.Server/XmindMcp.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/XmindMcp.Tests/XmindMcp.Tests.csproj" />
+  </Folder>
+</Solution>
