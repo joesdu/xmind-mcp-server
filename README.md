@@ -60,11 +60,28 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
     "xmind": {
       "type": "local",
       "command": "dotnet",
-      "args": ["run", "--project", "C:\\Users\\Joe\\Desktop\\xmind-mcp\\src\\XmindMcp.Server"],
+      "args": ["run", "--project", "yourpath\\xmind-mcp\\src\\XmindMcp.Server"],
       "enabled": true
     }
   }
 }
+```
+
+建议将代码发布为单文件后,使用如下配置(注意修改文件路径):
+
+```json
+  "mcp": {
+    "microsoft-learn": {
+      "type": "remote",
+      "url": "https://learn.microsoft.com/api/mcp",
+      "enabled": true
+    },
+    "xmind": {
+      "command": ["D:\\Tools\\XmindMcp.Server.exe"],
+      "enabled": true,
+      "type": "local"
+    }
+  },
 ```
 
 或者使用发布后的可执行文件：
@@ -74,7 +91,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
   "mcp": {
     "xmind": {
       "type": "local",
-      "command": "C:\\Users\\Joe\\Desktop\\xmind-mcp\\publish\\XmindMcp.Server.exe",
+      "command": "yourpath\\xmind-mcp\\publish\\XmindMcp.Server.exe",
       "enabled": true
     }
   }
@@ -88,7 +105,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
 {
   "tool": "CreateXmindFile",
   "parameters": {
-    "filePath": "C:\\Users\\Joe\\Desktop\\my-mindmap.xmind",
+    "filePath": "yourpath\\my-mindmap.xmind",
     "rootTitle": "项目计划",
     "sheetTitle": "主工作表"
   }
@@ -100,7 +117,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
 {
   "tool": "AddChildTopic",
   "parameters": {
-    "filePath": "C:\\Users\\Joe\\Desktop\\my-mindmap.xmind",
+    "filePath": "yourpath\\my-mindmap.xmind",
     "parentTopicId": "topic-id",
     "title": "需求分析",
     "notes": "分析项目需求"
@@ -113,7 +130,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
 {
   "tool": "SearchTopicsByTitle",
   "parameters": {
-    "filePath": "C:\\Users\\Joe\\Desktop\\my-mindmap.xmind",
+    "filePath": "yourpath\\my-mindmap.xmind",
     "keyword": "C#"
   }
 }
@@ -124,7 +141,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
 {
   "tool": "AddMarkerToTopic",
   "parameters": {
-    "filePath": "C:\\Users\\Joe\\Desktop\\my-mindmap.xmind",
+    "filePath": "yourpath\\my-mindmap.xmind",
     "topicId": "topic-id",
     "groupId": "priorityMarkers",
     "markerId": "priority-1"
