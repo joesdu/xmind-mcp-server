@@ -67,23 +67,6 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
 }
 ```
 
-建议将代码发布为单文件后,使用如下配置(注意修改文件路径):
-
-```json
-  "mcp": {
-    "microsoft-learn": {
-      "type": "remote",
-      "url": "https://learn.microsoft.com/api/mcp",
-      "enabled": true
-    },
-    "xmind": {
-      "command": ["D:\\Tools\\XmindMcp.Server.exe"],
-      "enabled": true,
-      "type": "local"
-    }
-  },
-```
-
 或者使用发布后的可执行文件：
 
 ```json
@@ -206,11 +189,6 @@ xmind-mcp/
 - **System.Text.Json** - JSON 序列化
 - **System.IO.Compression** - ZIP 文件处理
 - **MSTest** - 单元测试
-
-## 依赖包
-
-- `ModelContextProtocol` (1.1.0)
-- `Microsoft.Extensions.Hosting` (10.0.5)
 
 ## 许可证
 
