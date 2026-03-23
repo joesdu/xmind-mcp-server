@@ -1,8 +1,7 @@
 using System.IO.Compression;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using XmindMcp.Server.Models;
+
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable UnusedMember.Global
 
@@ -13,12 +12,6 @@ namespace XmindMcp.Server.Services;
 /// </summary>
 public class XmindWriter
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
-
     /// <summary>
     /// 保存 XMind 文件
     /// </summary>
@@ -27,36 +20,27 @@ public class XmindWriter
     public static void Save(XmindDocument document, string? filePath = null)
     {
         var targetPath = filePath ?? document.FilePath ?? throw new ArgumentException("No file path specified");
+        PrepareTargetPath(targetPath);
+        using var archive = ZipFile.Open(targetPath, ZipArchiveMode.Create);
+        WriteContentJson(archive, document.Sheets);
+        WriteManifestJson(archive);
+        WriteMetadataJson(archive, document.Sheets.FirstOrDefault()?.Id);
+        WriteMetadataContentJson(archive);
+        document.FilePath = targetPath;
+    }
 
-        // 确保目录存在
-        var directory = Path.GetDirectoryName(targetPath);
-        if (!string.IsNullOrEmpty(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        // 删除已存在的文件
-        if (File.Exists(targetPath))
-        {
-            File.Delete(targetPath);
-        }
-
-        // 直接创建 ZIP 文件到目标路径
-        using (var archive = ZipFile.Open(targetPath, ZipArchiveMode.Create))
-        {
-            // 写入 content.json
-            WriteContentJson(archive, document.Sheets);
-
-            // 写入 manifest.json
-            WriteManifestJson(archive);
-
-            // 写入 metadata.json
-            WriteMetadataJson(archive, document.Sheets.FirstOrDefault()?.Id);
-
-            // 写入 metadata/content.json
-            WriteMetadataContentJson(archive);
-        }
-
+    /// <summary>
+    /// 异步保存 XMind 文件
+    /// </summary>
+    public static async Task SaveAsync(XmindDocument document, string? filePath = null, CancellationToken cancellationToken = default)
+    {
+        var targetPath = filePath ?? document.FilePath ?? throw new ArgumentException("No file path specified");
+        PrepareTargetPath(targetPath);
+        await using var archive = await ZipFile.OpenAsync(targetPath, ZipArchiveMode.Create, cancellationToken);
+        await WriteContentJsonAsync(archive, document.Sheets, cancellationToken);
+        await WriteManifestJsonAsync(archive, cancellationToken);
+        await WriteMetadataJsonAsync(archive, document.Sheets.FirstOrDefault()?.Id, cancellationToken);
+        await WriteMetadataContentJsonAsync(archive, cancellationToken);
         document.FilePath = targetPath;
     }
 
@@ -65,12 +49,14 @@ public class XmindWriter
     /// </summary>
     private static void WriteContentJson(ZipArchive archive, List<Sheet> sheets)
     {
-        var entry = archive.CreateEntry("content.json", CompressionLevel.Optimal);
-        using var stream = entry.Open();
         var sheetsJson = sheets.Select(SerializeSheet).ToList();
-        var json = JsonSerializer.Serialize(sheetsJson, JsonOptions);
-        var bytes = Encoding.UTF8.GetBytes(json);
-        stream.Write(bytes, 0, bytes.Length);
+        WriteJsonEntry(archive, "content.json", sheetsJson);
+    }
+
+    private static Task WriteContentJsonAsync(ZipArchive archive, List<Sheet> sheets, CancellationToken cancellationToken)
+    {
+        var sheetsJson = sheets.Select(SerializeSheet).ToList();
+        return WriteJsonEntryAsync(archive, "content.json", sheetsJson, cancellationToken);
     }
 
     /// <summary>
@@ -154,22 +140,30 @@ public class XmindWriter
     /// </summary>
     private static void WriteManifestJson(ZipArchive archive)
     {
-        var entry = archive.CreateEntry("manifest.json", CompressionLevel.Optimal);
-        using var stream = entry.Open();
-        
-        // XMind 标准 manifest 格式
         var manifest = new Dictionary<string, object>
         {
             ["file-entries"] = new Dictionary<string, object>
             {
                 ["content.json"] = new { },
-                ["metadata.json"] = new { }
+                ["metadata.json"] = new { },
+                ["metadata/content.json"] = new { }
             }
         };
-        
-        var json = JsonSerializer.Serialize(manifest, JsonOptions);
-        var bytes = Encoding.UTF8.GetBytes(json);
-        stream.Write(bytes, 0, bytes.Length);
+        WriteJsonEntry(archive, "manifest.json", manifest);
+    }
+
+    private static Task WriteManifestJsonAsync(ZipArchive archive, CancellationToken cancellationToken)
+    {
+        var manifest = new Dictionary<string, object>
+        {
+            ["file-entries"] = new Dictionary<string, object>
+            {
+                ["content.json"] = new { },
+                ["metadata.json"] = new { },
+                ["metadata/content.json"] = new { }
+            }
+        };
+        return WriteJsonEntryAsync(archive, "manifest.json", manifest, cancellationToken);
     }
 
     /// <summary>
@@ -177,8 +171,6 @@ public class XmindWriter
     /// </summary>
     private static void WriteMetadataJson(ZipArchive archive, string? activeSheetId)
     {
-        var entry = archive.CreateEntry("metadata.json", CompressionLevel.Optimal);
-        using var stream = entry.Open();
         var metadata = new
         {
             creator = new
@@ -188,9 +180,21 @@ public class XmindWriter
             },
             activeSheetId = activeSheetId ?? string.Empty
         };
-        var json = JsonSerializer.Serialize(metadata, JsonOptions);
-        var bytes = Encoding.UTF8.GetBytes(json);
-        stream.Write(bytes, 0, bytes.Length);
+        WriteJsonEntry(archive, "metadata.json", metadata);
+    }
+
+    private static Task WriteMetadataJsonAsync(ZipArchive archive, string? activeSheetId, CancellationToken cancellationToken)
+    {
+        var metadata = new
+        {
+            creator = new
+            {
+                name = "XmindMcp",
+                version = "1.0.0"
+            },
+            activeSheetId = activeSheetId ?? string.Empty
+        };
+        return WriteJsonEntryAsync(archive, "metadata.json", metadata, cancellationToken);
     }
 
     /// <summary>
@@ -198,19 +202,35 @@ public class XmindWriter
     /// </summary>
     private static void WriteMetadataContentJson(ZipArchive archive)
     {
-        var entry = archive.CreateEntry("metadata/content.json", CompressionLevel.Optimal);
-        using var stream = entry.Open();
-
-        // 空的 metadata content
-        var bytes = "{}"u8.ToArray();
-        stream.Write(bytes, 0, bytes.Length);
+        WriteJsonEntry(archive, "metadata/content.json", new { });
     }
 
-    /// <summary>
-    /// 异步保存 XMind 文件
-    /// </summary>
-    public static async Task SaveAsync(XmindDocument document, string? filePath = null, CancellationToken cancellationToken = default)
+    private static Task WriteMetadataContentJsonAsync(ZipArchive archive, CancellationToken cancellationToken) => WriteJsonEntryAsync(archive, "metadata/content.json", new { }, cancellationToken);
+
+    private static void PrepareTargetPath(string targetPath)
     {
-        await Task.Run(() => Save(document, filePath), cancellationToken);
+        var directory = Path.GetDirectoryName(targetPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+        if (File.Exists(targetPath))
+        {
+            File.Delete(targetPath);
+        }
+    }
+
+    private static void WriteJsonEntry(ZipArchive archive, string entryName, object payload)
+    {
+        var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+        using var stream = entry.Open();
+        JsonSerializer.Serialize(stream, payload, payload.GetType(), XmindJson.ArchiveWriteOptions);
+    }
+
+    private static async Task WriteJsonEntryAsync(ZipArchive archive, string entryName, object payload, CancellationToken cancellationToken)
+    {
+        var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+        await using var stream = await entry.OpenAsync(cancellationToken);
+        await JsonSerializer.SerializeAsync(stream, payload, payload.GetType(), XmindJson.ArchiveWriteOptions, cancellationToken);
     }
 }

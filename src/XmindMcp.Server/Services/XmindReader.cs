@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
 using XmindMcp.Server.Models;
+
 // ReSharper disable ClassNeverInstantiated.Global
 
 namespace XmindMcp.Server.Services;
@@ -10,18 +11,43 @@ namespace XmindMcp.Server.Services;
 /// </summary>
 public class XmindReader
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    /// <summary>
+    /// 异步加载 XMind 文件
+    /// </summary>
+    public static async Task<XmindDocument> LoadAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = false
-    };
+        ValidateFilePath(filePath);
+        await using var archive = await ZipFile.OpenReadAsync(filePath, cancellationToken);
+        var contentEntry = archive.GetEntry("content.json");
+        if (contentEntry != null)
+        {
+            return await LoadModernFormatAsync(contentEntry, filePath, cancellationToken);
+        }
+        ThrowIfLegacyOrInvalidArchive(archive);
+        return null!;
+    }
 
     /// <summary>
-    /// 加载 XMind 文件
+    /// 异步加载现代 JSON 格式
     /// </summary>
-    /// <param name="filePath">文件路径</param>
-    /// <returns>XMind 文档</returns>
-    public static XmindDocument Load(string filePath)
+    private static async Task<XmindDocument> LoadModernFormatAsync(ZipArchiveEntry entry, string filePath, CancellationToken cancellationToken)
+    {
+        await using var stream = await entry.OpenAsync(cancellationToken);
+        var sheets = await JsonSerializer.DeserializeAsync<List<JsonElement>>(stream, XmindJson.ArchiveReadOptions, cancellationToken) ?? throw new InvalidOperationException("Failed to parse XMind content");
+        return CreateDocument(sheets, filePath);
+    }
+
+    private static XmindDocument CreateDocument(List<JsonElement> sheets, string filePath)
+    {
+        var doc = new XmindDocument { FilePath = filePath };
+        foreach (var sheetJson in sheets)
+        {
+            doc.Sheets.Add(ParseSheet(sheetJson));
+        }
+        return doc;
+    }
+
+    private static void ValidateFilePath(string filePath)
     {
         if (!File.Exists(filePath))
         {
@@ -31,39 +57,16 @@ public class XmindReader
         {
             throw new ArgumentException("File must have .xmind extension");
         }
-        using var archive = ZipFile.OpenRead(filePath);
+    }
 
-        // 尝试读取现代格式 (content.json)
-        var contentEntry = archive.GetEntry("content.json");
-        if (contentEntry != null)
-        {
-            return LoadModernFormat(contentEntry, filePath);
-        }
-
-        // 尝试读取旧版格式 (content.xml)
+    private static void ThrowIfLegacyOrInvalidArchive(ZipArchive archive)
+    {
         var xmlEntry = archive.GetEntry("content.xml");
         if (xmlEntry != null)
         {
             throw new NotSupportedException("XML format (XMind 8 and older) is not supported. Please use a modern XMind version.");
         }
         throw new InvalidOperationException("Invalid XMind file: no content found");
-    }
-
-    /// <summary>
-    /// 加载现代 JSON 格式
-    /// </summary>
-    private static XmindDocument LoadModernFormat(ZipArchiveEntry entry, string filePath)
-    {
-        using var stream = entry.Open();
-        using var reader = new StreamReader(stream);
-        var json = reader.ReadToEnd();
-        var sheets = JsonSerializer.Deserialize<List<JsonElement>>(json, JsonOptions) ?? throw new InvalidOperationException("Failed to parse XMind content");
-        var doc = new XmindDocument { FilePath = filePath };
-        foreach (var sheetJson in sheets)
-        {
-            doc.Sheets.Add(ParseSheet(sheetJson));
-        }
-        return doc;
     }
 
     /// <summary>
@@ -126,22 +129,23 @@ public class XmindReader
         }
 
         // 递归解析子节点
-        if (json.TryGetProperty("children", out var childrenJson))
+        if (!json.TryGetProperty("children", out var childrenJson))
         {
-            if (childrenJson.TryGetProperty("attached", out var attachedJson))
-            {
-                var children = new List<Topic>();
-                foreach (var child in attachedJson.EnumerateArray())
-                {
-                    var childTopic = ParseTopic(child);
-                    childTopic.Parent = topic;
-                    children.Add(childTopic);
-                }
-                if (children.Count > 0)
-                {
-                    topic.Children = new() { Attached = children };
-                }
-            }
+            return topic;
+        }
+        if (!childrenJson.TryGetProperty("attached", out var attachedJson))
+        {
+            return topic;
+        }
+        var children = new List<Topic>();
+        foreach (var childTopic in attachedJson.EnumerateArray().Select(ParseTopic))
+        {
+            childTopic.Parent = topic;
+            children.Add(childTopic);
+        }
+        if (children.Count > 0)
+        {
+            topic.Children = new() { Attached = children };
         }
         return topic;
     }
@@ -151,18 +155,19 @@ public class XmindReader
     /// </summary>
     private static TopicNotes? ParseNotes(JsonElement json)
     {
-        if (json.TryGetProperty("plain", out var plainJson))
+        if (!json.TryGetProperty("plain", out var plainJson))
         {
-            if (plainJson.TryGetProperty("content", out var contentJson))
+            return null;
+        }
+        if (plainJson.TryGetProperty("content", out var contentJson))
+        {
+            return new()
             {
-                return new()
+                Plain = new()
                 {
-                    Plain = new()
-                    {
-                        Content = contentJson.GetString() ?? string.Empty
-                    }
-                };
-            }
+                    Content = contentJson.GetString() ?? string.Empty
+                }
+            };
         }
         return null;
     }
@@ -172,15 +177,11 @@ public class XmindReader
     /// </summary>
     private static List<Marker>? ParseMarkers(JsonElement json)
     {
-        var markers = new List<Marker>();
-        foreach (var marker in json.EnumerateArray())
+        var markers = json.EnumerateArray().Select(marker => new Marker
         {
-            markers.Add(new()
-            {
-                GroupId = GetStringProperty(marker, "groupId") ?? string.Empty,
-                MarkerId = GetStringProperty(marker, "markerId") ?? string.Empty
-            });
-        }
+            GroupId = GetStringProperty(marker, "groupId") ?? string.Empty,
+            MarkerId = GetStringProperty(marker, "markerId") ?? string.Empty
+        }).ToList();
         return markers.Count > 0 ? markers : null;
     }
 
@@ -205,17 +206,13 @@ public class XmindReader
     /// </summary>
     private static List<Relationship>? ParseRelationships(JsonElement json)
     {
-        var relationships = new List<Relationship>();
-        foreach (var rel in json.EnumerateArray())
+        var relationships = json.EnumerateArray().Select(rel => new Relationship
         {
-            relationships.Add(new()
-            {
-                Id = GetStringProperty(rel, "id") ?? Guid.NewGuid().ToString(),
-                End1Id = GetStringProperty(rel, "end1Id") ?? string.Empty,
-                End2Id = GetStringProperty(rel, "end2Id") ?? string.Empty,
-                Title = GetStringProperty(rel, "title")
-            });
-        }
+            Id = GetStringProperty(rel, "id") ?? Guid.NewGuid().ToString(), 
+            End1Id = GetStringProperty(rel, "end1Id") ?? string.Empty, 
+            End2Id = GetStringProperty(rel, "end2Id") ?? string.Empty, 
+            Title = GetStringProperty(rel, "title")
+        }).ToList();
         return relationships.Count > 0 ? relationships : null;
     }
 

@@ -1,5 +1,5 @@
 using System.ComponentModel;
-using System.Text.Json;
+using System.Text;
 using ModelContextProtocol.Server;
 using XmindMcp.Server.Models;
 using XmindMcp.Server.Services;
@@ -13,18 +13,19 @@ namespace XmindMcp.Server.Tools;
 public sealed class XmindReadTools
 {
     [McpServerTool]
-    [Description("读取 XMind 文件并返回其结构")]
-    public static string ReadXmindFile(
+    [Description("读取 XMind 文件并返回其结构概览")]
+    public static async Task<string> ReadXmindFile(
         [Description("XMind 文件的完整路径")]
-        string filePath)
+        string filePath,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var doc = XmindReader.Load(filePath);
+            var doc = await XmindReader.LoadAsync(filePath, cancellationToken);
             var sheet = doc.GetActiveSheet();
             if (sheet == null)
             {
-                return JsonSerializer.Serialize(new { error = "No sheets found in the XMind file" });
+                return ToolJson.Error("No sheets found in the XMind file");
             }
             var result = new
             {
@@ -39,97 +40,90 @@ public sealed class XmindReadTools
                     rootTopic = SerializeTopicSummary(sheet.RootTopic)
                 }
             };
-            return JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+            return ToolJson.Serialize(result);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message });
+            return ToolJson.Error(ex.Message);
         }
     }
 
     [McpServerTool]
-    [Description("获取 XMind 文件的完整主题树")]
-    public static string GetTopicTree(
+    [Description("获取 XMind 文件指定工作表的完整主题树")]
+    public static async Task<string> GetTopicTree(
         [Description("XMind 文件的完整路径")]
         string filePath,
         [Description("工作表标题（可选，默认使用第一个工作表）")]
-        string? sheetTitle = null)
+        string? sheetTitle = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var doc = XmindReader.Load(filePath);
-            var sheet = sheetTitle != null
-                            ? doc.FindSheet(sheetTitle)
-                            : doc.GetActiveSheet();
+            var doc = await XmindReader.LoadAsync(filePath, cancellationToken);
+            var sheet = sheetTitle != null ? doc.FindSheet(sheetTitle) : doc.GetActiveSheet();
             if (sheet == null)
             {
-                return JsonSerializer.Serialize(new { error = "Sheet not found" });
+                return ToolJson.Error($"Sheet '{sheetTitle}' not found");
             }
             var tree = SerializeTopicTree(sheet.RootTopic);
-            return JsonSerializer.Serialize(tree, new JsonSerializerOptions { WriteIndented = true });
+            return ToolJson.Serialize(tree);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message });
+            return ToolJson.Error(ex.Message);
         }
     }
 
     [McpServerTool]
-    [Description("获取 XMind 文件的统计信息")]
-    public static string GetXmindStatistics(
+    [Description("获取 XMind 文件所有工作表的统计信息（主题数量、深度、标注等）")]
+    public static async Task<string> GetXmindStatistics(
         [Description("XMind 文件的完整路径")]
-        string filePath)
+        string filePath,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var doc = XmindReader.Load(filePath);
-            var sheet = doc.GetActiveSheet();
-            if (sheet == null)
-            {
-                return JsonSerializer.Serialize(new { error = "No sheets found" });
-            }
-            var allTopics = TopicSearchEngine.GetAllTopics(sheet);
-            var leafNodes = TopicSearchEngine.GetLeafNodes(sheet.RootTopic);
+            var doc = await XmindReader.LoadAsync(filePath, cancellationToken);
             var stats = new
             {
                 filePath = doc.FilePath,
                 sheetCount = doc.Sheets.Count,
-                sheets = doc.Sheets.Select(s => new
+                sheets = doc.Sheets.Select(s =>
                 {
-                    title = s.Title,
-                    topicCount = TopicSearchEngine.CountTopics(s),
-                    maxDepth = TopicSearchEngine.GetDepth(s.RootTopic),
-                    rootTitle = s.RootTopic.Title
-                }).ToList(),
-                activeSheet = new
-                {
-                    title = sheet.Title,
-                    totalTopics = allTopics.Count,
-                    leafNodes = leafNodes.Count,
-                    maxDepth = TopicSearchEngine.GetDepth(sheet.RootTopic),
-                    topicsWithNotes = allTopics.Count(t => t.Notes?.Plain?.Content != null),
-                    topicsWithMarkers = allTopics.Count(t => t.Markers?.Count > 0),
-                    topicsWithLabels = allTopics.Count(t => t.Labels?.Count > 0),
-                    relationships = sheet.Relationships?.Count ?? 0
-                }
+                    var allTopics = TopicSearchEngine.GetAllTopics(s);
+                    var leafNodes = TopicSearchEngine.GetLeafNodes(s.RootTopic);
+                    return new
+                    {
+                        title = s.Title,
+                        totalTopics = allTopics.Count,
+                        leafNodes = leafNodes.Count,
+                        maxDepth = TopicSearchEngine.GetDepth(s.RootTopic),
+                        topicsWithNotes = allTopics.Count(t => t.Notes?.Plain?.Content != null),
+                        topicsWithMarkers = allTopics.Count(t => t.Markers?.Count > 0),
+                        topicsWithLabels = allTopics.Count(t => t.Labels?.Count > 0),
+                        relationships = s.Relationships?.Count ?? 0,
+                        rootTitle = s.RootTopic.Title
+                    };
+                }).ToList()
             };
-            return JsonSerializer.Serialize(stats, new JsonSerializerOptions { WriteIndented = true });
+            return ToolJson.Serialize(stats);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message });
+            return ToolJson.Error(ex.Message);
         }
     }
 
     [McpServerTool]
     [Description("列出 XMind 文件中的所有工作表")]
-    public static string ListSheets(
+    public static async Task<string> ListSheets(
         [Description("XMind 文件的完整路径")]
-        string filePath)
+        string filePath,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var doc = XmindReader.Load(filePath);
+            var doc = await XmindReader.LoadAsync(filePath, cancellationToken);
             var sheets = doc.Sheets.Select(s => new
             {
                 id = s.Id,
@@ -137,15 +131,63 @@ public sealed class XmindReadTools
                 rootTopicTitle = s.RootTopic.Title,
                 topicCount = TopicSearchEngine.CountTopics(s)
             }).ToList();
-            return JsonSerializer.Serialize(sheets, new JsonSerializerOptions { WriteIndented = true });
+            return ToolJson.Serialize(sheets);
         }
         catch (Exception ex)
         {
-            return JsonSerializer.Serialize(new { error = ex.Message });
+            return ToolJson.Error(ex.Message);
         }
     }
 
-    private static object SerializeTopicSummary(Topic topic) =>
+    [McpServerTool]
+    [Description("将 XMind 工作表导出为 Markdown 大纲格式")]
+    public static async Task<string> ExportSheetToMarkdown(
+        [Description("XMind 文件的完整路径")]
+        string filePath,
+        [Description("工作表标题（可选，默认使用第一个工作表）")]
+        string? sheetTitle = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var doc = await XmindReader.LoadAsync(filePath, cancellationToken);
+            var sheet = sheetTitle != null ? doc.FindSheet(sheetTitle) : doc.GetActiveSheet();
+            if (sheet == null)
+            {
+                return ToolJson.Error($"Sheet '{sheetTitle}' not found");
+            }
+            var sb = new StringBuilder();
+            sb.AppendLine($"# {sheet.RootTopic.Title}");
+            AppendTopicMarkdown(sb, sheet.RootTopic.Children?.Attached, 2);
+            return sb.ToString();
+        }
+        catch (Exception ex)
+        {
+            return ToolJson.Error(ex.Message);
+        }
+    }
+
+    private static void AppendTopicMarkdown(StringBuilder sb, List<Topic>? topics, int level)
+    {
+        if (topics == null)
+        {
+            return;
+        }
+        var prefix = new string('#', Math.Min(level, 6));
+        foreach (var topic in topics)
+        {
+            sb.AppendLine($"{prefix} {topic.Title}");
+            if (topic.Notes?.Plain?.Content is { Length: > 0 } notes)
+            {
+                sb.AppendLine();
+                sb.AppendLine(notes);
+                sb.AppendLine();
+            }
+            AppendTopicMarkdown(sb, topic.Children?.Attached, level + 1);
+        }
+    }
+
+    internal static object SerializeTopicSummary(Topic topic) =>
         new
         {
             id = topic.Id,
@@ -153,10 +195,11 @@ public sealed class XmindReadTools
             childCount = topic.Children?.Attached?.Count ?? 0,
             hasNotes = topic.Notes?.Plain?.Content != null,
             hasMarkers = topic.Markers?.Count > 0,
-            hasLabels = topic.Labels?.Count > 0
+            hasLabels = topic.Labels?.Count > 0,
+            hasLink = topic.Href != null
         };
 
-    private static object SerializeTopicTree(Topic topic)
+    internal static object SerializeTopicTree(Topic topic)
     {
         var result = new Dictionary<string, object>
         {

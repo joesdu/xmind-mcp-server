@@ -1,4 +1,5 @@
 using XmindMcp.Server.Models;
+
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable UnusedMember.Global
 
@@ -184,10 +185,7 @@ public class TopicEditor
     /// <summary>
     /// 移除标签
     /// </summary>
-    public static bool RemoveLabel(Topic topic, string label)
-    {
-        return topic.Labels != null && topic.Labels.Remove(label);
-    }
+    public static bool RemoveLabel(Topic topic, string label) => topic.Labels != null && topic.Labels.Remove(label);
 
     /// <summary>
     /// 设置链接

@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using XmindMcp.Server.Models;
+
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable UnusedMember.Global
 
@@ -27,10 +28,14 @@ public class TopicSearchEngine
     /// <summary>
     /// 使用正则表达式搜索标题
     /// </summary>
-    public static List<Topic> FindByTitleRegex(Sheet sheet, string pattern, RegexOptions options = RegexOptions.None)
+    public static List<Topic> FindByTitleRegex(Sheet sheet, string pattern, RegexOptions options = RegexOptions.None) => FindByTitleRegex(sheet, new(pattern, options));
+
+    /// <summary>
+    /// 使用已编译正则表达式搜索标题
+    /// </summary>
+    public static List<Topic> FindByTitleRegex(Sheet sheet, Regex regex)
     {
         var results = new List<Topic>();
-        var regex = new Regex(pattern, options);
         SearchByRegexRecursive(sheet.RootTopic, regex, results);
         return results;
     }

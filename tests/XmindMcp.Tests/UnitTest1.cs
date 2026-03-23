@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using XmindMcp.Server.Models;
 using XmindMcp.Server.Services;
 
@@ -62,6 +63,28 @@ public class XmindDocumentTests
         // Assert
         Assert.IsNotNull(sheet);
         Assert.AreEqual("Sheet 2", sheet.Title);
+    }
+
+    [TestMethod]
+    public void RenameSheet_ShouldUpdateSheetTitle()
+    {
+        var doc = new XmindDocument();
+        doc.AddSheet("Old", "Root");
+        var result = doc.RenameSheet("Old", "New");
+        Assert.IsTrue(result);
+        Assert.IsNotNull(doc.FindSheet("New"));
+    }
+
+    [TestMethod]
+    public void RemoveSheet_ShouldDeleteMatchingSheet()
+    {
+        var doc = new XmindDocument();
+        doc.AddSheet("A", "Root A");
+        doc.AddSheet("B", "Root B");
+        var result = doc.RemoveSheet("A");
+        Assert.IsTrue(result);
+        Assert.AreEqual(1, doc.Sheets.Count);
+        Assert.IsNull(doc.FindSheet("A"));
     }
 }
 
@@ -178,6 +201,60 @@ public class TopicEditorTests
         Assert.AreEqual(original.Notes!.Plain!.Content, clone.Notes!.Plain!.Content);
         Assert.AreEqual(1, clone.Children!.Attached!.Count);
         Assert.AreEqual("Child", clone.Children.Attached[0].Title);
+    }
+
+    [TestMethod]
+    public void InsertChild_ShouldRespectRequestedPosition()
+    {
+        var parent = new Topic { Title = "Parent" };
+        TopicEditor.AddChild(parent, "A");
+        TopicEditor.AddChild(parent, "C");
+        var child = TopicEditor.InsertChild(parent, 1, "B");
+        CollectionAssert.AreEqual(new[] { "A", "B", "C" }, parent.Children!.Attached!.Select(t => t.Title).ToArray());
+        Assert.AreEqual(parent, child.Parent);
+    }
+
+    [TestMethod]
+    public void MoveTopicToPosition_ShouldMoveTopicUnderNewParentAtIndex()
+    {
+        var oldParent = new Topic { Title = "Old Parent" };
+        var moved = TopicEditor.AddChild(oldParent, "Moved");
+        var newParent = new Topic { Title = "New Parent" };
+        TopicEditor.AddChild(newParent, "First");
+        TopicEditor.MoveTopicToPosition(moved, newParent, 0);
+        CollectionAssert.AreEqual(new[] { "Moved", "First" }, newParent.Children!.Attached!.Select(t => t.Title).ToArray());
+        Assert.AreEqual(newParent, moved.Parent);
+        Assert.AreEqual(0, oldParent.Children!.Attached!.Count);
+    }
+
+    [TestMethod]
+    public void RemoveMarker_ShouldRemoveExistingMarker()
+    {
+        var topic = new Topic { Title = "Test" };
+        TopicEditor.AddMarker(topic, MarkerConstants.Priority(1));
+        var result = TopicEditor.RemoveMarker(topic, MarkerConstants.Priority1);
+        Assert.IsTrue(result);
+        Assert.AreEqual(0, topic.Markers!.Count);
+    }
+
+    [TestMethod]
+    public void RemoveLabel_ShouldRemoveExistingLabel()
+    {
+        var topic = new Topic { Title = "Test" };
+        TopicEditor.AddLabel(topic, "Important");
+        var result = TopicEditor.RemoveLabel(topic, "Important");
+        Assert.IsTrue(result);
+        Assert.AreEqual(0, topic.Labels!.Count);
+    }
+
+    [TestMethod]
+    public void SetLinkAndClearLink_ShouldUpdateHref()
+    {
+        var topic = new Topic { Title = "Test" };
+        TopicEditor.SetLink(topic, "https://example.com");
+        Assert.AreEqual("https://example.com", topic.Href);
+        TopicEditor.ClearLink(topic);
+        Assert.IsNull(topic.Href);
     }
 }
 
@@ -315,5 +392,15 @@ public class TopicSearchEngineTests
 
         // Assert
         Assert.AreEqual("Root → C# Programming", path);
+    }
+
+    [TestMethod]
+    public void FindByTitleRegex_WithRegexInstance_ShouldFindMatchingTopics()
+    {
+        var sheet = CreateTestSheet();
+        var regex = new Regex("^C#", RegexOptions.None);
+        var results = TopicSearchEngine.FindByTitleRegex(sheet, regex);
+        Assert.AreEqual(1, results.Count);
+        Assert.AreEqual("C# Programming", results[0].Title);
     }
 }
