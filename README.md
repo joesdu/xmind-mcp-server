@@ -205,7 +205,7 @@ xmind-mcp/
 - **ModelContextProtocol** - MCP SDK
 - **System.Text.Json** - JSON 序列化
 - **System.IO.Compression** - ZIP 文件处理
-- **xUnit** - 单元测试
+- **MSTest** - 单元测试
 
 ## 依赖包
 
