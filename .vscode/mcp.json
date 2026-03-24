@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "xmind": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": ["run", "--project", "${workspaceFolder}/src/XmindMcp.Server"]
+    }
+  }
+}

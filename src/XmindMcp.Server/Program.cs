@@ -12,7 +12,9 @@ builder.Services.AddMcpServer()
        .WithTools<XmindWriteTools>()
        .WithTools<XmindSearchTools>();
 
-// 配置日志输出到标准错误
+// 清除默认日志提供者（Host.CreateApplicationBuilder 默认注册了写入 stdout 的 Console 提供者，
+// 会污染 MCP stdio 协议流），然后重新添加仅输出到标准错误的 Console 提供者
+builder.Logging.ClearProviders();
 builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
 
 // 构建并运行
