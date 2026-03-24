@@ -117,7 +117,7 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/joesdu/xmind-mcp-server.git
 cd xmind-mcp
 ```
 
@@ -147,9 +147,46 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
 
 ---
 
-## 在 OpenCode / MCP Client 中配置
+## 在 MCP Client 中配置
 
-### 使用 `dotnet run`
+### VS Code
+
+在项目根目录创建 `.vscode/mcp.json`（仓库已包含此文件，打开项目后 VS Code 会自动发现并提示启用）：
+
+**使用 `dotnet run`（开发模式）：**
+
+```json
+{
+  "servers": {
+    "xmind": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": ["run", "--project", "${workspaceFolder}/src/XmindMcp.Server"]
+    }
+  }
+}
+```
+
+**使用发布后的可执行文件（推荐）：**
+
+```json
+{
+  "servers": {
+    "xmind": {
+      "type": "stdio",
+      "command": "yourpath\\xmind-mcp\\publish\\XmindMcp.Server.exe"
+    }
+  }
+}
+```
+
+> **注意**：VS Code 的 MCP stdio 传输要求 stdout 只输出合法 JSON，本项目已将所有日志重定向至 stderr，可直接使用。
+
+---
+
+### OpenCode / 其他 MCP Client
+
+**使用 `dotnet run`：**
 
 ```json
 {
@@ -164,7 +201,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
 }
 ```
 
-### 使用发布后的可执行文件
+**使用发布后的可执行文件：**
 
 ```json
 {
