@@ -13,7 +13,7 @@ builder.Services.AddMcpServer()
        .WithTools<XmindSearchTools>();
 
 // 配置日志输出到标准错误
-builder.Logging.AddConsole(options => { options.LogToStandardErrorThreshold = LogLevel.Trace; });
+builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
 
 // 构建并运行
 await builder.Build().RunAsync();
