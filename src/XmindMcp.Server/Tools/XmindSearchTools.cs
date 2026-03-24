@@ -13,15 +13,15 @@ namespace XmindMcp.Server.Tools;
 public sealed class XmindSearchTools
 {
     [McpServerTool]
-    [Description("按标题关键词搜索主题（支持跨所有工作表搜索）")]
+    [Description("按标题关键词搜索主题(支持跨所有工作表搜索)")]
     public static async Task<string> SearchTopicsByTitle(
         [Description("XMind 文件的完整路径")]
         string filePath,
         [Description("搜索关键词")]
         string keyword,
-        [Description("工作表标题（可选，默认搜索所有工作表）")]
+        [Description("工作表标题(可选,默认搜索所有工作表)")]
         string? sheetTitle = null,
-        [Description("是否区分大小写（默认 false）")]
+        [Description("是否区分大小写(默认 false)")]
         bool caseSensitive = false,
         CancellationToken cancellationToken = default)
     {
@@ -56,15 +56,15 @@ public sealed class XmindSearchTools
     }
 
     [McpServerTool]
-    [Description("使用正则表达式搜索主题标题（支持跨所有工作表搜索）")]
+    [Description("使用正则表达式搜索主题标题(支持跨所有工作表搜索)")]
     public static async Task<string> SearchTopicsByRegex(
         [Description("XMind 文件的完整路径")]
         string filePath,
         [Description("正则表达式模式")]
         string pattern,
-        [Description("工作表标题（可选，默认搜索所有工作表）")]
+        [Description("工作表标题(可选,默认搜索所有工作表)")]
         string? sheetTitle = null,
-        [Description("是否忽略大小写（默认 true）")]
+        [Description("是否忽略大小写(默认 true)")]
         bool ignoreCase = true,
         CancellationToken cancellationToken = default)
     {
@@ -108,13 +108,13 @@ public sealed class XmindSearchTools
     }
 
     [McpServerTool]
-    [Description("按标记搜索主题（支持跨所有工作表搜索）")]
+    [Description("按标记搜索主题(支持跨所有工作表搜索)")]
     public static async Task<string> SearchTopicsByMarker(
         [Description("XMind 文件的完整路径")]
         string filePath,
-        [Description("标记 ID（例如：priority-1, task-done, flag-red）")]
+        [Description("标记 ID(例如: priority-1, task-done, flag-red)")]
         string markerId,
-        [Description("工作表标题（可选，默认搜索所有工作表）")]
+        [Description("工作表标题(可选,默认搜索所有工作表)")]
         string? sheetTitle = null,
         CancellationToken cancellationToken = default)
     {
@@ -147,13 +147,13 @@ public sealed class XmindSearchTools
     }
 
     [McpServerTool]
-    [Description("按标签搜索主题（支持跨所有工作表搜索）")]
+    [Description("按标签搜索主题(支持跨所有工作表搜索)")]
     public static async Task<string> SearchTopicsByLabel(
         [Description("XMind 文件的完整路径")]
         string filePath,
         [Description("标签内容")]
         string label,
-        [Description("工作表标题（可选，默认搜索所有工作表）")]
+        [Description("工作表标题(可选,默认搜索所有工作表)")]
         string? sheetTitle = null,
         CancellationToken cancellationToken = default)
     {
@@ -186,13 +186,13 @@ public sealed class XmindSearchTools
     }
 
     [McpServerTool]
-    [Description("按备注内容搜索主题（支持跨所有工作表搜索）")]
+    [Description("按备注内容搜索主题(支持跨所有工作表搜索)")]
     public static async Task<string> SearchTopicsByNote(
         [Description("XMind 文件的完整路径")]
         string filePath,
         [Description("搜索关键词")]
         string keyword,
-        [Description("工作表标题（可选，默认搜索所有工作表）")]
+        [Description("工作表标题(可选,默认搜索所有工作表)")]
         string? sheetTitle = null,
         CancellationToken cancellationToken = default)
     {
@@ -208,7 +208,7 @@ public sealed class XmindSearchTools
                                      id = t.Id,
                                      title = t.Title,
                                      path = t.Path,
-                                     notePreview = t.Notes?.Plain?.Content is { Length: > 100 } c ? c[..100] + "..." : t.Notes?.Plain?.Content
+                                     notePreview = t.Notes?.Plain?.Content is { Length: > 100 } c ? $"{c[..100]}..." : t.Notes?.Plain?.Content
                                  })).ToList();
             return ToolJson.Serialize(new
             {
@@ -225,13 +225,22 @@ public sealed class XmindSearchTools
     }
 
     [McpServerTool]
-    [Description("获取指定主题的详细信息（包含父节点、子节点、路径等）")]
+    [Description("""
+                 获取指定主题的详细信息(包含父节点、子节点、路径等)。
+
+                 ⚠️ 重要: topicId 必须是主题的 ID(GUID),不是标题！
+
+                 正确使用流程: 
+                 1. 先用 SearchTopicsByTitle 搜索主题标题
+                 2. 从返回结果中获取 id 字段值
+                 3. 调用此工具传入该 id
+                 """)]
     public static async Task<string> GetTopicDetails(
         [Description("XMind 文件的完整路径")]
         string filePath,
-        [Description("主题 ID")]
+        [Description("主题 ID(必须是 SearchTopicsByTitle 返回的 id 字段,不是标题！)")]
         string topicId,
-        [Description("工作表标题（可选，默认在第一个工作表中查找）")]
+        [Description("工作表标题(可选,默认在第一个工作表中查找)")]
         string? sheetTitle = null,
         CancellationToken cancellationToken = default)
     {
@@ -246,7 +255,7 @@ public sealed class XmindSearchTools
             var topic = TopicSearchEngine.GetAllTopics(sheet).FirstOrDefault(t => t.Id == topicId);
             if (topic == null)
             {
-                return ToolJson.Error($"Topic '{topicId}' not found");
+                return ToolJson.Error($"Topic ID '{topicId}' not found. Use SearchTopicsByTitle first to get the correct topic ID.");
             }
             return ToolJson.Serialize(new
             {
@@ -274,7 +283,7 @@ public sealed class XmindSearchTools
     public static async Task<string> ListRelationships(
         [Description("XMind 文件的完整路径")]
         string filePath,
-        [Description("工作表标题（可选，默认使用第一个工作表）")]
+        [Description("工作表标题(可选,默认使用第一个工作表)")]
         string? sheetTitle = null,
         CancellationToken cancellationToken = default)
     {

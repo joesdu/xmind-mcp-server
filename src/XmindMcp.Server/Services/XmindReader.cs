@@ -208,9 +208,9 @@ public class XmindReader
     {
         var relationships = json.EnumerateArray().Select(rel => new Relationship
         {
-            Id = GetStringProperty(rel, "id") ?? Guid.NewGuid().ToString(), 
-            End1Id = GetStringProperty(rel, "end1Id") ?? string.Empty, 
-            End2Id = GetStringProperty(rel, "end2Id") ?? string.Empty, 
+            Id = GetStringProperty(rel, "id") ?? Guid.NewGuid().ToString(),
+            End1Id = GetStringProperty(rel, "end1Id") ?? string.Empty,
+            End2Id = GetStringProperty(rel, "end2Id") ?? string.Empty,
             Title = GetStringProperty(rel, "title")
         }).ToList();
         return relationships.Count > 0 ? relationships : null;

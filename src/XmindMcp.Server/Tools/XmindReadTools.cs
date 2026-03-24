@@ -53,7 +53,7 @@ public sealed class XmindReadTools
     public static async Task<string> GetTopicTree(
         [Description("XMind 文件的完整路径")]
         string filePath,
-        [Description("工作表标题（可选，默认使用第一个工作表）")]
+        [Description("工作表标题(可选,默认使用第一个工作表)")]
         string? sheetTitle = null,
         CancellationToken cancellationToken = default)
     {
@@ -75,7 +75,7 @@ public sealed class XmindReadTools
     }
 
     [McpServerTool]
-    [Description("获取 XMind 文件所有工作表的统计信息（主题数量、深度、标注等）")]
+    [Description("获取 XMind 文件所有工作表的统计信息(主题数量、深度、标注等)")]
     public static async Task<string> GetXmindStatistics(
         [Description("XMind 文件的完整路径")]
         string filePath,
@@ -144,7 +144,7 @@ public sealed class XmindReadTools
     public static async Task<string> ExportSheetToMarkdown(
         [Description("XMind 文件的完整路径")]
         string filePath,
-        [Description("工作表标题（可选，默认使用第一个工作表）")]
+        [Description("工作表标题(可选,默认使用第一个工作表)")]
         string? sheetTitle = null,
         CancellationToken cancellationToken = default)
     {
