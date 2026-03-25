@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable UnusedMember.Global
 
-namespace XmindMcp.Server.Models;
+namespace XmindMcp.Models;
 
 /// <summary>
 /// XMind 关系（连接线）

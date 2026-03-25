@@ -136,13 +136,13 @@ dotnet test XmindMcp.slnx
 ### 4. 直接运行 MCP Server
 
 ```bash
-dotnet run --project src/XmindMcp.Server
+dotnet run --project src/XmindMcp
 ```
 
 ### 5. 发布
 
 ```bash
-dotnet publish src/XmindMcp.Server -c Release -o publish
+dotnet publish src/XmindMcp -c Release -o publish
 ```
 
 ---
@@ -161,7 +161,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
     "xmind": {
       "type": "stdio",
       "command": "dotnet",
-      "args": ["run", "--project", "${workspaceFolder}/src/XmindMcp.Server"]
+      "args": ["run", "--project", "${workspaceFolder}/src/XmindMcp"]
     }
   }
 }
@@ -174,7 +174,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
   "servers": {
     "xmind": {
       "type": "stdio",
-      "command": "yourpath\\xmind-mcp\\publish\\XmindMcp.Server.exe"
+      "command": "yourpath\\xmind-mcp\\publish\\XmindMcp.exe"
     }
   }
 }
@@ -194,7 +194,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
     "xmind": {
       "type": "local",
       "command": "dotnet",
-      "args": ["run", "--project", "yourpath\\xmind-mcp\\src\\XmindMcp.Server"],
+      "args": ["run", "--project", "yourpath\\xmind-mcp\\src\\XmindMcp"],
       "enabled": true
     }
   }
@@ -208,7 +208,7 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
   "mcp": {
     "xmind": {
       "type": "local",
-      "command": "yourpath\\xmind-mcp\\publish\\XmindMcp.Server.exe",
+      "command": "yourpath\\xmind-mcp\\publish\\XmindMcp.exe",
       "enabled": true
     }
   }
@@ -320,12 +320,12 @@ dotnet publish src/XmindMcp.Server -c Release -o publish
 ```text
 xmind-mcp/
 ├── src/
-│   └── XmindMcp.Server/
+│   └── XmindMcp/
 │       ├── Models/      # XMind 数据模型
 │       ├── Services/    # Reader / Writer / Search / Editor
 │       ├── Tools/       # MCP 工具定义
 │       ├── Program.cs   # MCP Server 入口
-│       └── XmindMcp.Server.csproj
+│       └── XmindMcp.csproj
 ├── tests/
 │   └── XmindMcp.Tests/
 └── XmindMcp.slnx

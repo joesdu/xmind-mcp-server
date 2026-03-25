@@ -1,9 +1,9 @@
 using System.ComponentModel;
 using ModelContextProtocol.Server;
-using XmindMcp.Server.Models;
-using XmindMcp.Server.Services;
+using XmindMcp.Models;
+using XmindMcp.Services;
 
-namespace XmindMcp.Server.Tools;
+namespace XmindMcp.Tools;
 
 /// <summary>
 /// XMind 写入工具

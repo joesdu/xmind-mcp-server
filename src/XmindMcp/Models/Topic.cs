@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace XmindMcp.Server.Models;
+namespace XmindMcp.Models;
 
 /// <summary>
 /// XMind 主题节点

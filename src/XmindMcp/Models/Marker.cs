@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 // ReSharper disable UnusedMember.Global
 
-namespace XmindMcp.Server.Models;
+namespace XmindMcp.Models;
 
 /// <summary>
 /// XMind 标记

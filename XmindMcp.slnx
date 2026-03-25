@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/XmindMcp.Server/XmindMcp.Server.csproj" />
+    <Project Path="src/XmindMcp/XmindMcp.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/XmindMcp.Tests/XmindMcp.Tests.csproj" />

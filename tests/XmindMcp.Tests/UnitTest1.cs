@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
-using XmindMcp.Server.Models;
-using XmindMcp.Server.Services;
+using XmindMcp.Models;
+using XmindMcp.Services;
 
 namespace XmindMcp.Tests;
 

@@ -1,7 +1,7 @@
 using System.Text.Json;
-using XmindMcp.Server.Services;
+using XmindMcp.Services;
 
-namespace XmindMcp.Server.Tools;
+namespace XmindMcp.Tools;
 
 internal static class ToolJson
 {

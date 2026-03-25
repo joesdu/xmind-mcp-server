@@ -1,10 +1,10 @@
 using System.ComponentModel;
 using System.Text;
 using ModelContextProtocol.Server;
-using XmindMcp.Server.Models;
-using XmindMcp.Server.Services;
+using XmindMcp.Models;
+using XmindMcp.Services;
 
-namespace XmindMcp.Server.Tools;
+namespace XmindMcp.Tools;
 
 /// <summary>
 /// XMind 读取工具

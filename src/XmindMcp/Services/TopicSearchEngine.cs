@@ -1,10 +1,10 @@
 using System.Text.RegularExpressions;
-using XmindMcp.Server.Models;
+using XmindMcp.Models;
 
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable UnusedMember.Global
 
-namespace XmindMcp.Server.Services;
+namespace XmindMcp.Services;
 
 /// <summary>
 /// 主题搜索引擎

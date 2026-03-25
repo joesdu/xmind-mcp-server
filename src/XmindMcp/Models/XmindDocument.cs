@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 
-namespace XmindMcp.Server.Models;
+namespace XmindMcp.Models;
 
 /// <summary>
 /// XMind 文档

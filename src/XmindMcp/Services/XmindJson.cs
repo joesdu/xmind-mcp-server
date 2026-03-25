@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace XmindMcp.Server.Services;
+namespace XmindMcp.Services;
 
 internal static class XmindJson
 {

@@ -1,11 +1,11 @@
 using System.IO.Compression;
 using System.Text.Json;
-using XmindMcp.Server.Models;
+using XmindMcp.Models;
 
 // ReSharper disable ClassNeverInstantiated.Global
 // ReSharper disable UnusedMember.Global
 
-namespace XmindMcp.Server.Services;
+namespace XmindMcp.Services;
 
 /// <summary>
 /// XMind 文件写入器

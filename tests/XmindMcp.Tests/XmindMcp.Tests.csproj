@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\XmindMcp.Server\XmindMcp.Server.csproj" />
+    <ProjectReference Include="..\..\src\XmindMcp\XmindMcp.csproj" />
   </ItemGroup>
 
 </Project>
